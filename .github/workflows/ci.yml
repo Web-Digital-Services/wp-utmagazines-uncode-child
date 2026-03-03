@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  php-lint:
+    name: PHP lint (php -l)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.1", "8.2", "8.3"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Lint PHP files
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(git ls-files '*.php' || true)
+          if [ -z "$files" ]; then
+            echo "No PHP files found."
+            exit 0
+          fi
+
+          echo "$files" | while read -r f; do
+            echo "Linting $f"
+            php -l "$f"
+          done
+
+  theme-sanity:
+    name: Theme sanity checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify required files exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f style.css
+          test -f functions.php
+          test -f screenshot.png || echo "Note: screenshot.png not found (optional)"
+          echo "Theme sanity checks passed."
+
+      - name: Confirm this is an Uncode child theme
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! grep -qiE '^Template:\s*uncode\s*$' style.css; then
+            echo "ERROR: style.css does not contain 'Template: uncode' (expected for Uncode child theme)."
+            echo "If this repo is not meant to be an Uncode child theme, remove this check."
+            exit 1
+          fi
+          echo "Confirmed: Uncode child theme (Template: uncode)."
