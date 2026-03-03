@@ -1,0 +1,513 @@
+/*
+Theme Name: Uncode Child
+Description: Child theme for Uncode theme
+Author: Undsgn™
+Author URI: http://www.undsgn.com
+Template: uncode
+Version: 1.0.0
+Text Domain: uncode
+*/
+
+/* Solution to add correct hover effect to Share Your Voice of Gratitude button - custom ID added to button element in bake builder
+---------------------------------------------------------------------------------------------------- */
+#share-gratitude-button:hover {
+    border: 1px solid #c0511b !important;
+}
+
+
+/* Home page - IMPACT type
+---------------------------------------------------------------------------------------------------- */
+
+@media (max-width:660px) {
+#home-hero-text h1 {
+    font-size: 22vw !important;
+}
+}
+
+
+/* Temporary Solution to hide link to post author archive - redirect is handled with Yoast
+---------------------------------------------------------------------------------------------------- */
+.author-info a:hover {
+	color: #171717 !important;
+}
+
+
+/* Guestbook
+---------------------------------------------------------------------------------------------------- */
+
+#gwolle_gb_write_button {
+    margin: 0 auto 64px !important;
+	text-align: center !important;
+}
+
+#gwolle_gb_write_button .button {
+	background-color: #c0511b !important;
+	border: 1px solid #c0511b !important;
+	border-radius: 2px !important;
+	color: #fff !important;
+	cursor: pointer !important;
+	font-family: inherit !important;
+	font-size: 15px !important;
+	font-style: normal !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.1em !important;
+	line-height: 16px !important;
+	margin-top: 50px !important;
+	margin-bottom: 0 !important;	
+	padding: 14px 40px !important;	
+	text-align: center !important;
+	vertical-align: middle !important;
+	white-space: nowrap !important;
+	-webkit-user-select: none !important;
+	-moz-user-select: none !important;
+	-ms-user-select: none !important;
+	-o-user-select: none !important;
+	user-select: none !important;
+	-webkit-transition: all 0.3s ease-in-out !important;
+	-moz-transition:    all 0.3s ease-in-out !important;
+	-ms-transition:     all 0.3s ease-in-out !important;
+	-o-transition:      all 0.3s ease-in-out !important;
+	transition:         all 0.3s ease-in-out !important;	
+}
+
+#gwolle_gb_write_button .button:hover, #gwolle_gb_write_button .button:focus {
+	background-color: #ffff !important;
+	border: 1px solid #c0511b !important;
+	color: #c0511b !important;
+	text-decoration: none !important;
+}
+
+#gwolle_gb_new_entry h3 {
+	font-size: 24px !important;
+	margin-bottom: 64px !important;
+	text-align: center !important;
+}
+
+#gwolle_gb .gwolle-gb-float div.label {
+    width: 100% !important;
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-size: 16px !important;
+	font-style: normal !important;
+	font-weight: 600 !important;
+    line-height: 1.2 !important;
+	margin: 0px auto 8px !important;
+    clear: both !important;		
+}
+
+#gwolle_gb .gwolle_gb_float .label, #gwolle_gb .gwolle_gb_float .input, #gwolle_gb .gwolle-gb-float .label, #gwolle_gb .gwolle-gb-float .input {
+    float: none !important
+}
+
+#gwolle_gb .gwolle-gb-float div.input {
+    width: 100% !important
+}
+
+#gwolle_gb div.input input[type="text"], #gwolle_gb div.input input[type="email"], #gwolle_gb div.input input[type="url"], #gwolle_gb div.input textarea {
+	background-color: #f4f4f4 !important;
+	border: 1px solid #ddd !important;
+	border-radius: 0px !important;
+	box-shadow: none;
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-size: 22px !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+	letter-spacing: 0 !important;
+	line-height: 24px !important;
+	margin: 0px auto !important;
+	padding: 20px 20px !important;
+	vertical-align: middle !important;
+	-webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+#gwolle-gb-total {
+    display: none !important;
+}
+
+#gwolle_gb .gb-entry .gb-author-info {
+	font-size: 15px !important;
+    margin-top: 16px !important;
+    margin-bottom: 24px !important;
+}
+
+#gwolle_gb .gb-entry {
+    border-top: 1px solid #ecdbd2 !important;
+    padding: 32px 0 40px !important;
+    margin: 0 !important;
+    clear: left !important;
+}
+
+#gwolle_gb .gwolle_gb_submit {
+    text-align: center !important;
+}
+
+#gwolle_gb .gwolle_gb_notice {
+    font-size: 15px !important;
+    line-height: 16px !important;
+    margin-bottom:64px !important;
+	text-align: center !important;
+}
+
+#gwolle_gb .btn {
+	background-color: #c0511b !important;
+	border: 1px solid #c0511b !important;
+	border-radius: 2px !important;
+	color: #fff !important;
+	cursor: pointer !important;
+	font-family: inherit !important;
+	font-size: 15px !important;
+	font-style: normal !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.1em !important;
+	line-height: 16px !important;
+	margin-top: 0px !important;
+	margin-bottom: 0 !important;	
+	padding: 14px 40px !important;	
+	text-align: center !important;
+	vertical-align: middle !important;
+	white-space: nowrap !important;
+	-webkit-user-select: none !important;
+	-moz-user-select: none !important;
+	-ms-user-select: none !important;
+	-o-user-select: none !important;
+	user-select: none !important;
+	-webkit-transition: all 0.3s ease-in-out !important;
+	-moz-transition:    all 0.3s ease-in-out !important;
+	-ms-transition:     all 0.3s ease-in-out !important;
+	-o-transition:      all 0.3s ease-in-out !important;
+	transition:         all 0.3s ease-in-out !important;	
+}
+
+#gwolle_gb .btn:hover, #gwolle_gb .btn:focus {
+	background-color: #ffff !important;
+	border: 1px solid #c0511b !important;
+	color: #c0511b !important;
+	text-decoration: none !important;
+}
+
+#gwolle_gb #gwolle_gb_messages, #gwolle_gb #gwolle-gb-messages {
+    border-left: 0px solid #ffff !important;
+    box-shadow: none !important;
+    padding: 1px 12px !important;
+    margin: 8px 0 48px !important;
+    text-align: center !important;
+}
+
+#gwolle_gb #gwolle_gb_messages, #gwolle_gb #gwolle-gb-messages p {
+	font-size: 24px;
+}
+
+#gwolle_gb .gb-entry-saved {
+	font-size: 24px;
+	font-weight: 600;
+}
+
+
+/* Footer
+---------------------------------------------------------------------------------------------------- */
+
+.site-footer p {
+	color: #fff !important;
+	font-size: 15px !important;
+}
+
+.site-footer a {
+	color: #fff !important;
+	text-decoration: none !important;
+	border-bottom: 1px solid #ccc !important;
+	transition: all 0.2s ease-in-out !important;
+}
+
+.site-footer a:hover {
+	color: #fff !important;
+	text-decoration: none !important;
+	border-bottom: 0px solid #ccc !important;
+}
+
+#footer-heading-link a {
+	text-decoration: none !important;
+	border-bottom: none !important;
+}
+
+
+/* Reposition the mobile close icon
+---------------------------------------------------------------------------------------------------- */
+
+.mobile-menu-button {
+    padding: 46px 34px 46px 34px !important;
+}
+
+
+/* Search
+---------------------------------------------------------------------------------------------------- */
+.overlay.overlay-search .search-container {
+	font-size: 28px !important;
+}
+
+.style-dark input {
+	border: 0px !important;
+	border-bottom: 2px solid #c0511b !important;
+	padding: .8em 1.5em !important;
+}
+
+
+/* Modify the size of the story filters
+---------------------------------------------------------------------------------------------------- */
+.isotope-filters ul.menu-smart.text-uppercase > li > span > a {
+    font-size: 13px; !important;
+}
+
+
+/* Gravity Forms
+---------------------------------------------------------------------------------------------------- */
+
+body .gform_wrapper {
+    margin: 0 !important;
+    max-width: 100% !important;
+}
+
+body .gform_wrapper ul li.gfield {
+    margin-top: 40px !important;
+    padding-top: 0 !important;
+}
+
+body .gform_wrapper .top_label .gfield_label {
+    display: -moz-inline-stack !important;
+    display: inline-block !important;
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-size: 16px !important;
+	font-style: normal !important;
+	font-weight: 600 !important;
+    line-height: 1.2 !important;
+	margin: 0px auto 8px !important;
+    clear: both !important;
+}
+
+/* Text Inputs
+--------------------------------------------- */
+body .gform_wrapper input[type=text], body .gform_wrapper input[type=url], body .gform_wrapper input[type=email], body .gform_wrapper input[type=tel], body .gform_wrapper input[type=number], body .gform_wrapper input[type=password], body .gform_wrapper select, body .gform_wrapper textarea {
+	background-color: #f4f4f4 !important;
+	border: 1px solid #ddd !important;
+	border-radius: 0px !important;
+	box-shadow: none;
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-size: 22px !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+	letter-spacing: 0 !important;
+	line-height: 24px !important;
+	margin: 0px auto !important;
+	padding: 20px 20px !important;
+	vertical-align: middle !important;
+	-webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+}
+
+body .gform_wrapper .ginput_container input::-moz-placeholder, .ginput_container select::-moz-placeholder, .ginput_container textarea::-moz-placeholder {
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+	opacity: .4 !important;
+}
+
+body .gform_wrapper .ginput_container input:-ms-input-placeholder, .ginput_container select:-ms-input-placeholder, .ginput_container textarea:-ms-input-placeholder {
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+	opacity: .4 !important;
+}
+
+body .gform_wrapper .ginput_container input::-webkit-input-placeholder, .ginput_container select::-webkit-input-placeholder, .ginput_container textarea::-webkit-input-placeholder {
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+	opacity: .4 !important;
+}
+
+body .gform_wrapper .ginput_container input:focus, .ginput_container select:focus, .ginput_container textarea:focus {
+	color: #171717 !important;
+	background-color: #fff !important;
+	border: 1px solid #ccc !important;
+	border-radius: 0px !important;
+	padding: 20px 20px !important;
+	box-shadow: none !important;
+}
+
+/* Button
+--------------------------------------------- */
+.gform_button {
+	background-color: #c0511b !important;
+	border: 1px solid #c0511b !important;
+	border-radius: 2px !important;
+	color: #fff !important;
+	cursor: pointer !important;
+	font-family: inherit !important;
+	font-size: 15px !important;
+	font-style: normal !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.1em !important;
+	line-height: 16px !important;
+	margin-top: 50px !important;
+	margin-bottom: 0 !important;	
+	padding: 14px 40px !important;	
+	text-align: center !important;
+	vertical-align: middle !important;
+	white-space: nowrap !important;
+	-webkit-user-select: none !important;
+	-moz-user-select: none !important;
+	-ms-user-select: none !important;
+	-o-user-select: none !important;
+	user-select: none !important;
+	-webkit-transition: all 0.3s ease-in-out !important;
+	-moz-transition:    all 0.3s ease-in-out !important;
+	-ms-transition:     all 0.3s ease-in-out !important;
+	-o-transition:      all 0.3s ease-in-out !important;
+	transition:         all 0.3s ease-in-out !important;	
+}
+
+.gform_button:hover, .gform_button:focus {
+	background-color: #ffff !important;
+	border: 1px solid #c0511b !important;
+	color: #c0511b !important;
+	text-decoration: none !important;
+}
+
+.gform_button:active, .gform_button.active {
+	border: 1px solid #171717 !important;
+ }
+
+/* Form footer
+--------------------------------------------- */
+.gform_wrapper .gform_footer {
+    clear: both !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-align: center !important;
+}
+
+/* Errors
+--------------------------------------------- */
+.gform_wrapper div.validation_error {
+	display: none !important;
+}
+
+.gform_wrapper .instruction {
+    display: none !important;
+}
+
+.gform_wrapper li.gfield.gfield_error, .gform_wrapper li.gfield.gfield_error.gfield_contains_required.gfield_creditcard_warning {
+    background-color: #fff !important;
+    margin-top: 26px !important;
+    margin-bottom: 0px !important;
+    padding: 0px 0px 0px 0px !important;
+    border-top: 0px solid !important;
+    border-bottom: 0px solid !important;
+}
+
+.gform_wrapper .validation_message {
+    color: #ff3241 !important;
+	font-family: inherit !important;
+	font-size: 14px !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+	line-height: 1.2 !important;
+	text-align: center !important;
+}
+
+.gform_wrapper li.gfield_error div.ginput_complex.ginput_container label, .gform_wrapper li.gfield_error ul.gfield_checkbox, .gform_wrapper li.gfield_error ul.gfield_radio {
+    color: #ff3241 !important;
+}
+
+.gform_wrapper .field_description_below .gfield_description {
+    padding-top: 10px !important;
+}
+
+.gform_wrapper li.gfield_error input:not([type="radio"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="image"]):not([type="file"]), .gform_wrapper li.gfield_error textarea {
+    border-bottom: 1px solid #ff3241 !important;
+}
+
+/* Confirmation Message
+--------------------------------------------- */
+.form-confirmation {
+	background: #f4f4f4;
+	margin: 40px 0 !important;
+	padding: 56px 24px;
+	text-align: center !important;
+}
+
+.form-confirmation h3 {
+	color: #171717 !important;
+	font-family: Lora !important;
+	font-size: 40px !important;
+	font-style: normal !important;
+    font-weight: 400 !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+	text-align: center !important;
+}
+
+.form-confirmation p {
+	color: #171717 !important;
+	font-family: inherit !important;
+	font-size: 20px !important;
+	font-style: normal !important;
+	font-weight: 400 !important;
+    line-height: 1.8 !important;	
+	text-align: center !important;
+}
+
+.gform_confirmation_message {
+	margin: 0 !important;
+}
+
+/* Secondary menu item - Part of UT Health San Antonio
+--------------------------------------------- */
+
+.submenu-dark {
+	background-color: #C0511B !important;
+	padding-top: 4px !important;
+}
+
+@media (max-width:960px) {
+	.submenu-dark {
+		padding-top: 0px !important;
+	}
+}
+
+.menu-item-83937 a {
+	color: #fff !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+	letter-spacing: .5px !important;
+	-webkit-transition: all 0.2s ease-in-out !important;
+	-moz-transition:    all 0.2s ease-in-out !important;
+	-ms-transition:     all 0.2s ease-in-out !important;
+	-o-transition:      all 0.2s ease-in-out !important;
+	transition:         all 0.2s ease-in-out !important;	
+}
+
+.menu-item-83937 a:hover {
+	text-decoration: underline !important;
+}
+
+/* Hide Featured Image on News Posts single view
+--------------------------------------------- */
+.page-header--news .row-container[data-section="1"],
+.page-header--news .row-container[data-section="2"] {
+	display: none !important;
+}
+
+/* Disable fade in / out behaviour on News Posts single titles
+--------------------------------------------- */
+.header-scrolled.page-header--news .header-wrapper .row-container[data-section="0"] .row-header {
+	opacity: 1 !important;
+}
