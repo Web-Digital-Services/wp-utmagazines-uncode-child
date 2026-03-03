@@ -1,0 +1,6 @@
+# Default: Dev team reviews everything
+* @Web-Digital-Services/Dev
+
+# Optional: if UX should review screenshots or CSS-heavy changes
+# *.css @Web-Digital-Services/UX
+# screenshot.png @Web-Digital-Services/UX
