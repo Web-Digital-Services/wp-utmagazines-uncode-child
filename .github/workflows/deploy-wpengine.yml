@@ -150,8 +150,28 @@ jobs:
         run: |
           set -euo pipefail
           THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
+          DEPLOY_DIR="$(mktemp -d)"
+          trap 'rm -rf "${DEPLOY_DIR}"' EXIT
+          TARGET_THEME_DIR="${DEPLOY_DIR}/wp-content/themes/uncode-child"
+          mkdir -p "${TARGET_THEME_DIR}"
 
-          git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
+          if [ "${THEME_DIR}" = "." ]; then
+            while IFS= read -r f; do
+              mkdir -p "${TARGET_THEME_DIR}/$(dirname "${f}")"
+              cp "${f}" "${TARGET_THEME_DIR}/${f}"
+            done < <(git ls-files)
+          else
+            rsync -a "${THEME_DIR}/" "${TARGET_THEME_DIR}/"
+          fi
+
+          test -f "${TARGET_THEME_DIR}/style.css"
+
+          cd "${DEPLOY_DIR}"
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy ${GITHUB_SHA:-manual}"
 
           if git remote get-url wpengine_staging >/dev/null 2>&1; then
             git remote set-url wpengine_staging "${WPE_STAGING_REMOTE}"
@@ -161,7 +181,7 @@ jobs:
 
           REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
           echo "Pushing to staging remote branch: ${REMOTE_BRANCH}"
-          git push wpengine_staging "wpengine-theme-split:${REMOTE_BRANCH}" --force
+          git push wpengine_staging "HEAD:${REMOTE_BRANCH}" --force
 
       - name: Comment on PR (deploy finished)
         if: always()
@@ -246,7 +266,28 @@ jobs:
           THEME_DIR="wp-content/themes/uncode-child"
           if [ -f "style.css" ]; then THEME_DIR="."; fi
 
-          git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
+          DEPLOY_DIR="$(mktemp -d)"
+          trap 'rm -rf "${DEPLOY_DIR}"' EXIT
+          TARGET_THEME_DIR="${DEPLOY_DIR}/wp-content/themes/uncode-child"
+          mkdir -p "${TARGET_THEME_DIR}"
+
+          if [ "${THEME_DIR}" = "." ]; then
+            while IFS= read -r f; do
+              mkdir -p "${TARGET_THEME_DIR}/$(dirname "${f}")"
+              cp "${f}" "${TARGET_THEME_DIR}/${f}"
+            done < <(git ls-files)
+          else
+            rsync -a "${THEME_DIR}/" "${TARGET_THEME_DIR}/"
+          fi
+
+          test -f "${TARGET_THEME_DIR}/style.css"
+
+          cd "${DEPLOY_DIR}"
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy ${GITHUB_SHA:-manual}"
 
           if git remote get-url wpengine_prod >/dev/null 2>&1; then
             git remote set-url wpengine_prod "${WPE_PROD_REMOTE}"
@@ -256,4 +297,4 @@ jobs:
 
           REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
           echo "Pushing to prod remote branch: ${REMOTE_BRANCH}"
-          git push wpengine_prod "wpengine-theme-split:${REMOTE_BRANCH}" --force
+          git push wpengine_prod "HEAD:${REMOTE_BRANCH}" --force
