@@ -512,7 +512,7 @@ body .gform_wrapper .ginput_container input:focus, .ginput_container select:focu
 	opacity: 1 !important;
 }
 
-/* Temporary deploy test banner (remove after verifying staging deploy) */
+/* Temporary deploy test banner (remove after verifying staging deploy adding message for commit) */
 .deploy-test-banner {
   padding: 10px 14px;
   margin: 12px 0;
