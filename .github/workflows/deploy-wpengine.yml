@@ -1,0 +1,121 @@
+name: WP Engine Deploy
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize, reopened]
+  push:
+    branches: [main]
+
+# Prevent two staging deploys from running at the same time
+concurrency:
+  group: wpengine-staging
+  cancel-in-progress: true
+
+env:
+  # IMPORTANT: update this if your theme folder name/path changes
+  THEME_DIR: wp-content/themes/uncode-child
+  STAGING_LABEL: deploy:staging
+
+jobs:
+  deploy_staging:
+    name: Deploy to WP Engine Staging (label-gated)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'pull_request' &&
+      (
+        github.event.action == 'labeled' ||
+        github.event.action == 'synchronize' ||
+        github.event.action == 'reopened'
+      ) &&
+      contains(toJson(github.event.pull_request.labels), env.STAGING_LABEL)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify theme directory exists
+        run: |
+          set -euo pipefail
+          test -d "${THEME_DIR}"
+          test -f "${THEME_DIR}/style.css"
+          test -f "${THEME_DIR}/functions.php" || echo "Note: functions.php not found (ok if theme doesn't use it)"
+          echo "Theme dir OK: ${THEME_DIR}"
+
+      - name: Configure SSH for WP Engine
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${WPE_SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H git.wpengine.com >> ~/.ssh/known_hosts
+        env:
+          WPE_SSH_PRIVATE_KEY: ${{ secrets.WPE_SSH_PRIVATE_KEY }}
+
+      - name: Deploy theme subtree to STAGING
+        run: |
+          set -euo pipefail
+
+          # Create a temp branch that contains ONLY the theme directory contents
+          git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
+
+          # Add the WP Engine staging remote and force push the theme branch
+          git remote add wpengine_staging "${WPE_STAGING_REMOTE}"
+
+          # WP Engine GitPush commonly expects 'master' on the remote.
+          # If your WP Engine remote uses 'main', set secret WPE_REMOTE_BRANCH=main
+          REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
+
+          echo "Pushing to staging remote branch: ${REMOTE_BRANCH}"
+          git push wpengine_staging "wpengine-theme-split:${REMOTE_BRANCH}" --force
+
+          echo "Staging deploy complete."
+        env:
+          WPE_STAGING_REMOTE: ${{ secrets.WPE_STAGING_REMOTE }}
+          WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
+
+  deploy_prod:
+    name: Deploy to WP Engine Production (main)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify theme directory exists
+        run: |
+          set -euo pipefail
+          test -d "${THEME_DIR}"
+          test -f "${THEME_DIR}/style.css"
+          echo "Theme dir OK: ${THEME_DIR}"
+
+      - name: Configure SSH for WP Engine
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${WPE_SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H git.wpengine.com >> ~/.ssh/known_hosts
+        env:
+          WPE_SSH_PRIVATE_KEY: ${{ secrets.WPE_SSH_PRIVATE_KEY }}
+
+      - name: Deploy theme subtree to PROD
+        run: |
+          set -euo pipefail
+
+          git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
+          git remote add wpengine_prod "${WPE_PROD_REMOTE}"
+
+          REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
+
+          echo "Pushing to prod remote branch: ${REMOTE_BRANCH}"
+          git push wpengine_prod "wpengine-theme-split:${REMOTE_BRANCH}" --force
+
+          echo "Production deploy complete."
+        env:
+          WPE_PROD_REMOTE: ${{ secrets.WPE_PROD_REMOTE }}
+          WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
