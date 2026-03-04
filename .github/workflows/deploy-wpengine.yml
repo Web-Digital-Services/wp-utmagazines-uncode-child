@@ -6,28 +6,15 @@ on:
   push:
     branches: [main]
 
-# Needed so GITHUB_TOKEN can remove labels / comment on PRs
 permissions:
   contents: read
   pull-requests: write
   issues: write
 
 env:
-  # If your theme is at repo root, this will be auto-detected.
-  # If you're keeping wp-content structure, set it to wp-content/themes/uncode-child
   DEFAULT_THEME_DIR: wp-content/themes/uncode-child
-
-  # Staging label string (NOTE: can't use env.* inside if:, so we also hardcode it in if expressions)
-  STAGING_LABEL: deploy:staging
-
-  # Update this to whatever staging URL you want to point reviewers to
   STAGING_URL: https://stagemagazines.wpengine.com/schools/
 
-  # WP Engine GitPush often expects "master" as the remote branch
-  # If yours is "main", set a repo secret WPE_REMOTE_BRANCH=main
-  WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
-
-# Prevent multiple staging deploys at once (latest wins)
 concurrency:
   group: wpengine-staging
   cancel-in-progress: true
@@ -52,9 +39,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          echo "Current PR: #${CURRENT_PR}"
-          echo "Scanning open PRs with label '${LABEL}'..."
-
           prs=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/${OWNER}/${REPO}/pulls?state=open&per_page=100" \
@@ -75,19 +59,15 @@ jobs:
             fi
           done
 
-          echo "Label cleanup complete."
-
   deploy_staging:
     name: Deploy to WP Engine Staging (label-gated)
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'pull_request' &&
       (
-        github.event.action == 'labeled' ||
-        github.event.action == 'synchronize' ||
-        github.event.action == 'reopened'
-      ) &&
-      contains(toJson(github.event.pull_request.labels), '"name":"deploy:staging"')
+        (github.event.action == 'labeled' && github.event.label.name == 'deploy:staging') ||
+        (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'deploy:staging'))
+      )
 
     steps:
       - name: Comment on PR (deploy starting)
@@ -141,27 +121,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-
           if [ -f "style.css" ]; then
             echo "theme_dir=." >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           if [ -f "${DEFAULT_THEME_DIR}/style.css" ]; then
             echo "theme_dir=${DEFAULT_THEME_DIR}" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
           echo "ERROR: Could not find style.css at repo root or ${DEFAULT_THEME_DIR}/style.css"
           exit 1
-
-      - name: Verify theme directory exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
-          test -f "${THEME_DIR}/style.css"
-          echo "Theme dir OK: ${THEME_DIR}"
 
       - name: Configure SSH for WP Engine
         shell: bash
@@ -178,6 +147,7 @@ jobs:
         shell: bash
         env:
           WPE_STAGING_REMOTE: ${{ secrets.WPE_STAGING_REMOTE }}
+          WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
         run: |
           set -euo pipefail
           THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
@@ -193,8 +163,6 @@ jobs:
           REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
           echo "Pushing to staging remote branch: ${REMOTE_BRANCH}"
           git push wpengine_staging "wpengine-theme-split:${REMOTE_BRANCH}" --force
-
-          echo "Staging deploy complete."
 
       - name: Comment on PR (deploy finished)
         if: always()
@@ -250,31 +218,11 @@ jobs:
     name: Deploy to WP Engine Production (main)
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Detect theme directory
-        id: detect
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          if [ -f "style.css" ]; then
-            echo "theme_dir=." >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if [ -f "${DEFAULT_THEME_DIR}/style.css" ]; then
-            echo "theme_dir=${DEFAULT_THEME_DIR}" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "ERROR: Could not find style.css at repo root or ${DEFAULT_THEME_DIR}/style.css"
-          exit 1
 
       - name: Configure SSH for WP Engine
         shell: bash
@@ -291,9 +239,14 @@ jobs:
         shell: bash
         env:
           WPE_PROD_REMOTE: ${{ secrets.WPENGINE_PROD_REMOTE }}
+          WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
         run: |
           set -euo pipefail
-          THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
+
+          THEME_DIR="wp-content/themes/uncode-child"
+          if [ -f "style.css" ]; then
+            THEME_DIR="."
+          fi
 
           git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
 
@@ -306,5 +259,3 @@ jobs:
           REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
           echo "Pushing to prod remote branch: ${REMOTE_BRANCH}"
           git push wpengine_prod "wpengine-theme-split:${REMOTE_BRANCH}" --force
-
-          echo "Production deploy complete."
