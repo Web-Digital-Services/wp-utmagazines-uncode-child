@@ -25,17 +25,8 @@ jobs:
       - name: Lint PHP files
         shell: bash
         run: |
-          set -euo pipefail
-          files=$(git ls-files '*.php' || true)
-          if [ -z "$files" ]; then
-            echo "No PHP files found."
-            exit 0
-          fi
-
-          echo "$files" | while read -r f; do
-            echo "Linting $f"
-            php -l "$f"
-          done
+          php -v
+          find wp-content/themes/uncode-child -name "*.php" -print0 | xargs -0 -n 1 php -l
 
   theme-sanity:
     name: Theme sanity checks
@@ -48,10 +39,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -f style.css
-          test -f functions.php
-          test -f screenshot.png || echo "Note: screenshot.png not found (optional)"
-          echo "Theme sanity checks passed."
+          THEME_DIR="wp-content/themes/uncode-child"
+
+          test -f "$THEME_DIR/style.css"
+          test -f "$THEME_DIR/functions.php"
+          test -f "$THEME_DIR/rtl.css" || echo "Note: rtl.css not found (optional)"
+          test -f "$THEME_DIR/screenshot.png" || echo "Note: screenshot.png not found (optional)"
+
+          echo "Theme sanity checks passed"
 
       - name: Confirm this is an Uncode child theme
         shell: bash
