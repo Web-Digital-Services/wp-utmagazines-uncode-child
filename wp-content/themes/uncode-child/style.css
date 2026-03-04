@@ -257,7 +257,7 @@ Text Domain: uncode
 /* Modify the size of the story filters
 ---------------------------------------------------------------------------------------------------- */
 .isotope-filters ul.menu-smart.text-uppercase > li > span > a {
-    font-size: 13px; !important;
+    font-size: 13px !important;
 }
 
 
