@@ -6,7 +6,7 @@ on:
   push:
     branches: [main]
 
-# Needed so GITHUB_TOKEN can remove labels from other PRs
+# Needed so GITHUB_TOKEN can remove labels / comment on PRs
 permissions:
   contents: read
   pull-requests: write
@@ -17,7 +17,11 @@ env:
   # If you're keeping wp-content structure, set it to wp-content/themes/uncode-child
   DEFAULT_THEME_DIR: wp-content/themes/uncode-child
 
+  # Staging label string (NOTE: can't use env.* inside if:, so we also hardcode it in if expressions)
   STAGING_LABEL: deploy:staging
+
+  # Update this to whatever staging URL you want to point reviewers to
+  STAGING_URL: https://stagemagazines.wpengine.com/schools/
 
   # WP Engine GitPush often expects "master" as the remote branch
   # If yours is "main", set a repo secret WPE_REMOTE_BRANCH=main
@@ -44,14 +48,13 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
           CURRENT_PR: ${{ github.event.pull_request.number }}
-          LABEL: ${{ env.STAGING_LABEL }}
+          LABEL: deploy:staging
         run: |
           set -euo pipefail
 
           echo "Current PR: #${CURRENT_PR}"
           echo "Scanning open PRs with label '${LABEL}'..."
 
-          # Find open PRs that have the staging label
           prs=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/${OWNER}/${REPO}/pulls?state=open&per_page=100" \
@@ -87,6 +90,46 @@ jobs:
       contains(toJson(github.event.pull_request.labels), '"name":"deploy:staging"')
 
     steps:
+      - name: Comment on PR (deploy starting)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const marker = '<!-- wpengine-staging-deploy -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const stagingUrl = process.env.STAGING_URL;
+
+            const body =
+              `${marker}\n` +
+              `🚀 **WP Engine Staging Deploy Started**\n\n` +
+              `- **Run:** ${runUrl}\n` +
+              `- **Staging URL:** ${stagingUrl}\n\n` +
+              `I’ll update this comment when the deploy finishes.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
+
       - name: Checkout PR head
         uses: actions/checkout@v4
         with:
@@ -117,7 +160,6 @@ jobs:
         run: |
           set -euo pipefail
           THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
-
           test -f "${THEME_DIR}/style.css"
           echo "Theme dir OK: ${THEME_DIR}"
 
@@ -140,10 +182,8 @@ jobs:
           set -euo pipefail
           THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
 
-          # subtree split requires THEME_DIR to be a directory path ('.' is okay)
           git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
 
-          # Add or update the WP Engine staging remote
           if git remote get-url wpengine_staging >/dev/null 2>&1; then
             git remote set-url wpengine_staging "${WPE_STAGING_REMOTE}"
           else
@@ -156,13 +196,60 @@ jobs:
 
           echo "Staging deploy complete."
 
+      - name: Comment on PR (deploy finished)
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const marker = '<!-- wpengine-staging-deploy -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const stagingUrl = process.env.STAGING_URL;
+            const status = process.env.JOB_STATUS;
+
+            const icon = status === 'success' ? '✅' : (status === 'cancelled' ? '⚪' : '❌');
+            const headline =
+              status === 'success' ? '**WP Engine Staging Deploy Succeeded**' :
+              status === 'cancelled' ? '**WP Engine Staging Deploy Cancelled**' :
+              '**WP Engine Staging Deploy Failed**';
+
+            const body =
+              `${marker}\n` +
+              `${icon} ${headline}\n\n` +
+              `- **Run:** ${runUrl}\n` +
+              `- **Staging URL:** ${stagingUrl}\n\n` +
+              `Tip: hard refresh / incognito if you don’t see changes.`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              per_page: 100,
+            });
+
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body,
+              });
+            }
+
   deploy_prod:
     name: Deploy to WP Engine Production (main)
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    # Optional: if you set up GitHub Environments, this can gate prod with approvals
-    # environment: production
 
     steps:
       - name: Checkout
