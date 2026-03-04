@@ -13,7 +13,7 @@ permissions:
 
 env:
   DEFAULT_THEME_DIR: wp-content/themes/uncode-child
-  STAGING_URL: https://stagemagazines.wpengine.com/schools/
+  STAGING_URL: https://stagemagazines.wpengine.com/mission
 
 concurrency:
   group: wpengine-staging
