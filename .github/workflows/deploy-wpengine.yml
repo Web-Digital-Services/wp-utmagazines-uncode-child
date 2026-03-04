@@ -11,13 +11,13 @@ permissions:
   pull-requests: write
   issues: write
 
-env:
-  DEFAULT_THEME_DIR: wp-content/themes/uncode-child
-  STAGING_URL: https://stagemagazines.wpengine.com/mission
-
 concurrency:
   group: wpengine-staging
   cancel-in-progress: true
+
+env:
+  DEFAULT_THEME_DIR: wp-content/themes/uncode-child
+  STAGING_URL: https://stagemagazines.wpengine.com/mission
 
 jobs:
   cleanup_staging_label:
@@ -38,7 +38,6 @@ jobs:
           LABEL: deploy:staging
         run: |
           set -euo pipefail
-
           prs=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/${OWNER}/${REPO}/pulls?state=open&per_page=100" \
@@ -62,20 +61,19 @@ jobs:
   deploy_staging:
     name: Deploy to WP Engine Staging (label-gated)
     runs-on: ubuntu-latest
+    # Key line: runs for labeled/synchronize/reopened, but only if label exists on the PR
     if: >
       github.event_name == 'pull_request' &&
-      (
-        (github.event.action == 'labeled' && github.event.label.name == 'deploy:staging') ||
-        (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'deploy:staging'))
-      )
-
+      contains(github.event.pull_request.labels.*.name, 'deploy:staging')
     steps:
       - name: Comment on PR (deploy starting)
         uses: actions/github-script@v7
+        env:
+          STAGING_URL: ${{ env.STAGING_URL }}
         with:
           script: |
             const pr = context.payload.pull_request;
-            const marker = '<!-- wpengine-staging-deploy -->';
+            const marker = "<!-- wpengine-staging-deploy -->";
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const stagingUrl = process.env.STAGING_URL;
 
@@ -94,6 +92,7 @@ jobs:
             });
 
             const existing = comments.find(c => c.body && c.body.includes(marker));
+
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
@@ -169,19 +168,20 @@ jobs:
         uses: actions/github-script@v7
         env:
           JOB_STATUS: ${{ job.status }}
+          STAGING_URL: ${{ env.STAGING_URL }}
         with:
           script: |
             const pr = context.payload.pull_request;
-            const marker = '<!-- wpengine-staging-deploy -->';
+            const marker = "<!-- wpengine-staging-deploy -->";
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const stagingUrl = process.env.STAGING_URL;
-            const status = process.env.JOB_STATUS;
 
-            const icon = status === 'success' ? '✅' : (status === 'cancelled' ? '⚪' : '❌');
+            const status = process.env.JOB_STATUS;
+            const icon = status === "success" ? "✅" : (status === "cancelled" ? "⚪" : "❌");
             const headline =
-              status === 'success' ? '**WP Engine Staging Deploy Succeeded**' :
-              status === 'cancelled' ? '**WP Engine Staging Deploy Cancelled**' :
-              '**WP Engine Staging Deploy Failed**';
+              status === "success" ? "**WP Engine Staging Deploy Succeeded**" :
+              status === "cancelled" ? "**WP Engine Staging Deploy Cancelled**" :
+              "**WP Engine Staging Deploy Failed**";
 
             const body =
               `${marker}\n` +
@@ -198,6 +198,7 @@ jobs:
             });
 
             const existing = comments.find(c => c.body && c.body.includes(marker));
+
             if (existing) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
@@ -242,11 +243,8 @@ jobs:
           WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
         run: |
           set -euo pipefail
-
           THEME_DIR="wp-content/themes/uncode-child"
-          if [ -f "style.css" ]; then
-            THEME_DIR="."
-          fi
+          if [ -f "style.css" ]; then THEME_DIR="."; fi
 
           git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
 
