@@ -30,6 +30,6 @@ function my_gwolle_gb_button( $button ) {
 add_filter( 'gwolle_gb_button', 'my_gwolle_gb_button', 10, 1 );
 
 add_filter('uncode_before_body_title', function ($html) {
-  // Temporary deploy test banner (remove after verifying staging deploy works!)
+  // Temporary deploy test banner! (remove after verifying staging deploy works!)
   return $html . '<div class="deploy-test-banner">✅ DEPLOY TEST: If you can see this, the child theme was deployed.</div>';
 });
