@@ -2,24 +2,82 @@ name: WP Engine Deploy
 
 on:
   pull_request:
-    types: [labeled, unlabeled, synchronize, reopened]
+    types: [labeled, synchronize, reopened]
   push:
     branches: [main]
 
-# Prevent two staging deploys from running at the same time
+# Needed so GITHUB_TOKEN can remove labels from other PRs
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  # If your theme is at repo root, this will be auto-detected.
+  # If you're keeping wp-content structure, set it to wp-content/themes/uncode-child
+  DEFAULT_THEME_DIR: wp-content/themes/uncode-child
+
+  STAGING_LABEL: deploy:staging
+
+  # WP Engine GitPush often expects "master" as the remote branch
+  # If yours is "main", set a repo secret WPE_REMOTE_BRANCH=main
+  WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
+
+# Prevent multiple staging deploys at once (latest wins)
 concurrency:
   group: wpengine-staging
   cancel-in-progress: true
 
-env:
-  # IMPORTANT: update this if your theme folder name/path changes
-  THEME_DIR: wp-content/themes/uncode-child
-  STAGING_LABEL: deploy:staging
-
 jobs:
+  cleanup_staging_label:
+    name: Ensure only one PR has deploy:staging
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'deploy:staging'
+    steps:
+      - name: Remove deploy:staging from other open PRs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          CURRENT_PR: ${{ github.event.pull_request.number }}
+          LABEL: ${{ env.STAGING_LABEL }}
+        run: |
+          set -euo pipefail
+
+          echo "Current PR: #${CURRENT_PR}"
+          echo "Scanning open PRs with label '${LABEL}'..."
+
+          # Find open PRs that have the staging label
+          prs=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${OWNER}/${REPO}/pulls?state=open&per_page=100" \
+            --jq ".[] | select(.labels[].name == \"${LABEL}\") | .number" || true)
+
+          if [ -z "${prs}" ]; then
+            echo "No other PRs with label '${LABEL}' found."
+            exit 0
+          fi
+
+          for pr in ${prs}; do
+            if [ "${pr}" != "${CURRENT_PR}" ]; then
+              echo "Removing '${LABEL}' from PR #${pr}"
+              gh api \
+                -X DELETE \
+                -H "Accept: application/vnd.github+json" \
+                "/repos/${OWNER}/${REPO}/issues/${pr}/labels/${LABEL}" || true
+            fi
+          done
+
+          echo "Label cleanup complete."
+
   deploy_staging:
     name: Deploy to WP Engine Staging (label-gated)
     runs-on: ubuntu-latest
+    needs: [cleanup_staging_label]
     if: >
       github.event_name == 'pull_request' &&
       (
@@ -30,55 +88,82 @@ jobs:
       contains(toJson(github.event.pull_request.labels), env.STAGING_LABEL)
 
     steps:
-      - name: Checkout
+      - name: Checkout PR head
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Verify theme directory exists
+      - name: Detect theme directory
+        id: detect
+        shell: bash
         run: |
           set -euo pipefail
-          test -d "${THEME_DIR}"
+
+          if [ -f "style.css" ]; then
+            echo "theme_dir=." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -f "${DEFAULT_THEME_DIR}/style.css" ]; then
+            echo "theme_dir=${DEFAULT_THEME_DIR}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ERROR: Could not find style.css at repo root or ${DEFAULT_THEME_DIR}/style.css"
+          exit 1
+
+      - name: Verify theme directory exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
+
           test -f "${THEME_DIR}/style.css"
-          test -f "${THEME_DIR}/functions.php" || echo "Note: functions.php not found (ok if theme doesn't use it)"
           echo "Theme dir OK: ${THEME_DIR}"
 
       - name: Configure SSH for WP Engine
+        shell: bash
+        env:
+          WPE_SSH_PRIVATE_KEY: ${{ secrets.WPE_SSH_PRIVATE_KEY }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
           echo "${WPE_SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H git.wpengine.com >> ~/.ssh/known_hosts
-        env:
-          WPE_SSH_PRIVATE_KEY: ${{ secrets.WPE_SSH_PRIVATE_KEY }}
 
       - name: Deploy theme subtree to STAGING
+        shell: bash
+        env:
+          WPE_STAGING_REMOTE: ${{ secrets.WPE_STAGING_REMOTE }}
         run: |
           set -euo pipefail
+          THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
 
-          # Create a temp branch that contains ONLY the theme directory contents
+          # subtree split requires THEME_DIR to be a directory path ('.' is okay)
           git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
 
-          # Add the WP Engine staging remote and force push the theme branch
-          git remote add wpengine_staging "${WPE_STAGING_REMOTE}"
+          # Add or update the WP Engine staging remote
+          if git remote get-url wpengine_staging >/dev/null 2>&1; then
+            git remote set-url wpengine_staging "${WPE_STAGING_REMOTE}"
+          else
+            git remote add wpengine_staging "${WPE_STAGING_REMOTE}"
+          fi
 
-          # WP Engine GitPush commonly expects 'master' on the remote.
-          # If your WP Engine remote uses 'main', set secret WPE_REMOTE_BRANCH=main
           REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
-
           echo "Pushing to staging remote branch: ${REMOTE_BRANCH}"
           git push wpengine_staging "wpengine-theme-split:${REMOTE_BRANCH}" --force
 
           echo "Staging deploy complete."
-        env:
-          WPE_STAGING_REMOTE: ${{ secrets.WPE_STAGING_REMOTE }}
-          WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
 
   deploy_prod:
     name: Deploy to WP Engine Production (main)
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Optional: if you set up GitHub Environments, this can gate prod with approvals
+    # environment: production
 
     steps:
       - name: Checkout
@@ -86,36 +171,54 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify theme directory exists
+      - name: Detect theme directory
+        id: detect
+        shell: bash
         run: |
           set -euo pipefail
-          test -d "${THEME_DIR}"
-          test -f "${THEME_DIR}/style.css"
-          echo "Theme dir OK: ${THEME_DIR}"
+
+          if [ -f "style.css" ]; then
+            echo "theme_dir=." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -f "${DEFAULT_THEME_DIR}/style.css" ]; then
+            echo "theme_dir=${DEFAULT_THEME_DIR}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "ERROR: Could not find style.css at repo root or ${DEFAULT_THEME_DIR}/style.css"
+          exit 1
 
       - name: Configure SSH for WP Engine
+        shell: bash
+        env:
+          WPE_SSH_PRIVATE_KEY: ${{ secrets.WPE_SSH_PRIVATE_KEY }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
           echo "${WPE_SSH_PRIVATE_KEY}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H git.wpengine.com >> ~/.ssh/known_hosts
-        env:
-          WPE_SSH_PRIVATE_KEY: ${{ secrets.WPE_SSH_PRIVATE_KEY }}
 
       - name: Deploy theme subtree to PROD
+        shell: bash
+        env:
+          WPE_PROD_REMOTE: ${{ secrets.WPENGINE_PROD_REMOTE }}
         run: |
           set -euo pipefail
+          THEME_DIR="${{ steps.detect.outputs.theme_dir }}"
 
           git subtree split --prefix="${THEME_DIR}" -b wpengine-theme-split
-          git remote add wpengine_prod "${WPE_PROD_REMOTE}"
+
+          if git remote get-url wpengine_prod >/dev/null 2>&1; then
+            git remote set-url wpengine_prod "${WPE_PROD_REMOTE}"
+          else
+            git remote add wpengine_prod "${WPE_PROD_REMOTE}"
+          fi
 
           REMOTE_BRANCH="${WPE_REMOTE_BRANCH:-master}"
-
           echo "Pushing to prod remote branch: ${REMOTE_BRANCH}"
           git push wpengine_prod "wpengine-theme-split:${REMOTE_BRANCH}" --force
 
           echo "Production deploy complete."
-        env:
-          WPE_PROD_REMOTE: ${{ secrets.WPE_PROD_REMOTE }}
-          WPE_REMOTE_BRANCH: ${{ secrets.WPE_REMOTE_BRANCH }}
