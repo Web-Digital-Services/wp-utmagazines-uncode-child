@@ -257,11 +257,11 @@ Text Domain: uncode
 /* Modify the size of the story filters
 ---------------------------------------------------------------------------------------------------- */
 .isotope-filters ul.menu-smart.text-uppercase > li > span > a {
-    font-size: 13px; !important;
+    font-size: 13px !important;
 }
 
 
-/* Gravity Forms
+/* Gravity Forms two
 ---------------------------------------------------------------------------------------------------- */
 
 body .gform_wrapper {
@@ -510,4 +510,13 @@ body .gform_wrapper .ginput_container input:focus, .ginput_container select:focu
 --------------------------------------------- */
 .header-scrolled.page-header--news .header-wrapper .row-container[data-section="0"] .row-header {
 	opacity: 1 !important;
+}
+
+/* Temporary deploy test banner (remove after verifying staging deploy adding message for another commit!!) */
+.deploy-test-banner {
+  padding: 10px 14px;
+  margin: 12px 0;
+  border: 2px solid currentColor;
+  font-weight: 700;
+  border-radius: 6px;
 }
